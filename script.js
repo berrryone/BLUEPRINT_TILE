@@ -9,7 +9,7 @@ let isPanning = false, isSelecting = false;
 let selectStart = { x: 0, y: 0 }, lastMousePos = { x: 0, y: 0 }, contextMenuPos = { x: 0, y: 0 };
 
 const myCustomColors = [
-    { class: 'pink', hex: '#FF1493' }, { class: 'green', hex: '#39FF14' },
+    { class: 'pink', hex: '#9932CC' }, { class: 'green', hex: '#39FF14' },
     { class: 'orange', hex: '#FF6700' }, { class: 'yellow', hex: '#FFF01F' },
     { class: 'blue', hex: '#00BFFF' }, { class: 'navy', hex: '#1a2a44' }
 ];
