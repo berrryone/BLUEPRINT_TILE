@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UE Logic Board v3.0</title>
+    <title>Advanced Blueprint Task v4.0</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
         
         * { font-family: 'JetBrains Mono', monospace; box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; overflow: hidden; background: #000; height: 100%; }
-
-        /* Tło siatki */
-        .grid-background {
+        html, body { margin: 0; padding: 0; overflow: hidden; background: #000000; height: 100%; width: 100%; }
+        
+        /* Viewport do nawigacji (Panning) */
+        #viewport {
+            width: 100vw; height: 100vh; overflow: hidden; position: relative;
             background-color: #0b0b0b;
             background-image: 
                 linear-gradient(#1a1a1a 1px, transparent 1px),
@@ -19,108 +20,102 @@
                 linear-gradient(#222 1px, transparent 1px),
                 linear-gradient(90deg, #222 1px, transparent 1px);
             background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+            cursor: crosshair;
         }
 
-        /* Toolbar */
-        .toolbar {
-            position: fixed; left: 0; top: 0; width: 220px; height: 100%;
-            background: #111; border-right: 1px solid #333; padding: 20px;
-            display: flex; flex-direction: column; gap: 10px; z-index: 1000;
+        #canvas {
+            position: absolute; width: 10000px; height: 10000px;
+            top: 0; left: 0; transform-origin: 0 0;
         }
-        .toolbar-title { color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; }
-        .toolbar-btn {
-            background: #1a1a1a; border: 1px solid #333; color: #ccc;
-            padding: 10px; font-size: 11px; cursor: pointer; text-align: left; border-radius: 4px;
-        }
-        .toolbar-btn:hover { background: #252525; color: #fff; }
-
-        /* Paleta kolorów */
-        .color-palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 5px; }
-        .color-swatch { width: 100%; aspect-ratio: 1; border-radius: 3px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
-        .color-swatch:hover { transform: scale(1.1); }
-
-        /* Tile */
+        
+        /* Tile - Styl oparty na pierwotnym kodzie */
         .tile {
             position: absolute; min-width: 220px; background: rgba(15, 15, 15, 0.95);
-            border: 1px solid #333; border-radius: 5px; cursor: move; user-select: none;
+            border: 1px solid #333; border-radius: 4px; cursor: default;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10;
         }
-        .tile.selected { border: 2px solid #4a9eff; box-shadow: 0 0 15px rgba(74, 158, 255, 0.3); }
-
-        .tile-header { 
-            padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; 
-            border-radius: 4px 4px 0 0; position: relative;
-        }
+        .tile.selected { border: 2px solid #ffaa00; box-shadow: 0 0 15px rgba(255, 170, 0, 0.3); }
+        
+        .tile-header { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; cursor: move; border-radius: 3px 3px 0 0; }
         .tile-title { background: transparent; border: none; color: #fff; font-size: 11px; font-weight: 700; flex: 1; outline: none; }
         
-        .btn-close {
-            background: rgba(0,0,0,0.2); border: none; color: #888; cursor: pointer;
-            width: 20px; height: 20px; border-radius: 3px; font-size: 14px; display: flex; align-items: center; justify-content: center;
-        }
+        .btn-close { background: rgba(0,0,0,0.2); border: none; color: #888; cursor: pointer; width: 22px; height: 22px; border-radius: 3px; font-size: 14px; }
         .btn-close:hover { background: #e74c3c; color: white; }
 
         .tile-content { padding: 12px; }
         .tile-textarea { 
             width: 100%; background: #080808; border: 1px solid #222; color: #aaa; 
-            font-size: 11px; padding: 8px; resize: vertical; outline: none; min-height: 50px;
+            font-size: 11px; padding: 8px; resize: none; outline: none; min-height: 60px;
         }
 
-        /* Piny i przycisk PLUS */
-        .pin {
-            width: 12px; height: 12px; border-radius: 50%; border: 2px solid;
-            background: #0d0d0d; cursor: crosshair; position: absolute; z-index: 20;
-        }
-        .pin-input { left: -7px; top: 45px; border-color: #f1c40f; }
+        /* Piny i Dynamiczne Wyjścia */
+        .pin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid; background: #0d0d0d; cursor: crosshair; position: absolute; z-index: 20; }
+        .pin-input { left: -8px; top: 45px; border-color: #f1c40f; }
         
-        .outputs-wrapper { position: absolute; right: -7px; top: 45px; display: flex; flex-direction: column; gap: 15px; }
-        .pin-output { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #2ecc71; background: #0d0d0d; cursor: crosshair; }
+        .pin-output-container { position: absolute; right: -8px; top: 45px; display: flex; flex-direction: column; gap: 15px; }
+        .pin-output { width: 14px; height: 14px; border-radius: 50%; border: 2px solid; background: #0d0d0d; cursor: crosshair; }
         
-        .add-pin-btn {
-            position: absolute; right: -25px; bottom: 5px; width: 18px; height: 18px;
-            background: #2ecc71; color: black; border: none; border-radius: 50%;
+        .add-output-btn {
+            position: absolute; right: -28px; bottom: 5px; width: 20px; height: 20px;
+            background: #2ecc71; color: #000; border: none; border-radius: 50%;
             font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            opacity: 0.6; transition: opacity 0.2s;
         }
-        .add-pin-btn:hover { opacity: 1; }
+
+        /* Toolbar */
+        .toolbar {
+            position: fixed; left: 20px; top: 20px; width: 210px;
+            background: #111; border: 1px solid #333; padding: 15px; z-index: 1000; border-radius: 4px;
+        }
+        .toolbar-btn {
+            background: #1a1a1a; border: 1px solid #333; color: #ccc;
+            padding: 10px; font-size: 11px; cursor: pointer; width: 100%; text-align: left; margin-bottom: 5px; border-radius: 4px;
+        }
+        .toolbar-btn:hover { background: #252525; color: #fff; }
+        
+        .color-palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 10px 0; }
+        .swatch { height: 25px; border-radius: 3px; cursor: pointer; border: 1px solid #333; }
+
+        /* Menu kontekstowe (Unreal Style) */
+        #context-menu {
+            position: fixed; background: #1a1a1a; border: 1px solid #444; color: white;
+            padding: 5px 0; display: none; z-index: 5000; font-size: 12px; border-radius: 4px; min-width: 150px;
+        }
+        .context-item { padding: 8px 15px; cursor: pointer; }
+        .context-item:hover { background: #2980b9; }
 
         /* SVG Połączenia */
-        #canvas-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-        #canvas { position: absolute; width: 5000px; height: 5000px; transform-origin: 0 0; }
         #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .connection-line { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; cursor: pointer; pointer-events: stroke; }
-        .connection-line:hover { stroke: #ff4d4d; stroke-width: 4; }
-
-        .info-panel { position: fixed; bottom: 15px; left: 235px; color: #444; font-size: 10px; }
+        .connection-line { fill: none; stroke-width: 3; stroke-linecap: round; pointer-events: stroke; cursor: pointer; }
+        .connection-line:hover { stroke: #ff4d4d !important; }
     </style>
 </head>
-<body class="grid-background">
+<body>
 
     <div class="toolbar">
-        <div style="color: #4a9eff; font-size: 14px; font-weight: bold;">ENGINE BLUEPRINT</div>
-        <div style="color: #444; font-size: 9px;">DEVELOPER BUILD 3.0</div>
-
+        <div style="color: #4a9eff; font-size: 12px; font-weight: bold; margin-bottom: 10px;">BLUEPRINT TASK v4.0</div>
         <button class="toolbar-btn" onclick="addTile()">+ Dodaj Node</button>
         
-        <div class="toolbar-title">Zmień kolor zaznaczonego</div>
-        <div class="color-palette" id="colorPalette">
-            </div>
-
-        <div class="toolbar-title">Projekt</div>
-        <button class="toolbar-btn" onclick="saveProject()">💾 Pobierz Projekt</button>
-        <button class="toolbar-btn" onclick="triggerLoad()">📂 Wczytaj Projekt</button>
+        <div style="font-size: 9px; color: #555; margin: 10px 0 5px 0;">KOLOR ZAZNACZONEGO</div>
+        <div id="palette" class="color-palette"></div>
         
-        <button class="toolbar-btn" style="color: #e74c3c; margin-top: auto;" onclick="clearBoard()">⚠ Reset Sceny</button>
+        <hr style="border: 0; border-top: 1px solid #222; margin: 10px 0;">
+        <button class="toolbar-btn" onclick="saveToTxt()">📄 Pobierz .TXT</button>
+        <button class="toolbar-btn" onclick="saveProject()">💾 Pobierz .JSON</button>
+        <button class="toolbar-btn" onclick="triggerLoad()">📂 Wczytaj Projekt</button>
+        <button class="toolbar-btn" style="color: #e74c3c;" onclick="clearBoard()">⚠ Resetuj Scenę</button>
         <input type="file" id="loadInput" style="display:none" accept=".json">
     </div>
 
-    <div id="canvas-container">
+    <div id="viewport">
         <div id="canvas">
             <svg id="svg-layer"><g id="lines-group"></g></svg>
             <div id="tiles-layer"></div>
         </div>
     </div>
 
-    <div class="info-panel" id="infoPanel">Nodes: 0 | Connections: 0</div>
+    <div id="context-menu">
+        <div class="context-item" onclick="createNodeAtMouse()">+ Stwórz nowy Node tutaj</div>
+    </div>
 
     <script src="script.js"></script>
 </body>
