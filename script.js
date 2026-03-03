@@ -4,7 +4,7 @@ let tileCounter = 0;
 let selectedIds = new Set();
 let activeLine = null;
 
-// Historia dla Undo
+// historiaaaa
 let history = [];
 const MAX_HISTORY = 40;
 
