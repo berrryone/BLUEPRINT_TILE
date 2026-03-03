@@ -3,35 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berry Blueprint v6.6</title>
+    <title>Berry Blueprint v6.8</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-        
         * { font-family: 'JetBrains Mono', monospace !important; box-sizing: border-box; }
         html, body { margin: 0; padding: 0; overflow: hidden; background: #0b0b0b; height: 100%; width: 100%; color: #eee; }
 
-        #viewport {
-            width: 100vw; height: 100vh; overflow: hidden; position: relative;
-            background-color: #0e0e0e;
-            background-image: radial-gradient(circle, #222 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-
+        #viewport { width: 100vw; height: 100vh; overflow: hidden; position: relative; background-color: #0e0e0e; background-image: radial-gradient(circle, #222 1px, transparent 1px); background-size: 25px 25px; }
         #canvas { position: absolute; width: 10000px; height: 10000px; top: 0; left: 0; transform-origin: 0 0; }
 
         .tile {
-            position: absolute; min-width: 240px; 
-            background: #141414; border: 1px solid #333; border-radius: 8px; z-index: 10;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column;
+            position: absolute; min-width: 220px; background: #141414; border: 1px solid #333; border-radius: 8px; z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; resize: both; display: flex; flex-direction: column;
         }
         .tile.selected { border: 2px solid #fff34a; box-shadow: 0 0 15px rgba(255, 243, 74, 0.3); }
 
-        .tile-header { 
-            padding: 10px 12px; display: flex; align-items: center; 
-            justify-content: space-between; border-radius: 7px 7px 0 0; cursor: move;
-        }
-        
+        .tile-header { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; cursor: move; flex-shrink: 0; }
         .header-pink { background: #FF1493; color: #000; }
         .header-green { background: #39FF14; color: #000; }
         .header-orange { background: #FF6700; color: #000; }
@@ -40,42 +27,33 @@
         .header-navy { background: #1a2a44; color: #fff; }
 
         .tile-title { background: transparent; border: none; color: inherit; font-size: 11px; font-weight: 700; flex: 1; outline: none; }
-        .header-btns { display: flex; gap: 5px; }
         .btn-icon { background: rgba(0,0,0,0.1); border: none; color: inherit; cursor: pointer; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
 
-        /* GŁÓWNA SEKCJA Z PINAMI PO BOKACH */
-        .tile-body { display: flex; position: relative; min-height: 60px; padding: 10px 0; }
+        .tile-body { display: flex; position: relative; flex: 1; min-height: 40px; }
         
-        .pins-col { display: flex; flex-direction: column; gap: 12px; width: 24px; align-items: center; flex-shrink: 0; }
-        .inputs-col { margin-left: -12px; }
-        .outputs-col { margin-right: -12px; }
-
-        .tile-main-content { flex: 1; padding: 0 10px; display: flex; flex-direction: column; }
-        .tile-textarea { 
-            width: 100%; background: #0a0a0a; border: 1px solid #222; 
-            color: #ccc; font-size: 11px; padding: 8px; resize: none; outline: none; border-radius: 4px; min-height: 40px;
-        }
+        /* PINY - ABSOLUTNE I STALE */
+        .pins-col { position: absolute; top: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 10px; z-index: 100; pointer-events: none; }
+        .inputs-col { left: -9px; }
+        .outputs-col { right: -9px; }
 
         .pin {
             width: 16px; height: 16px; min-width: 16px; min-height: 16px;
-            border-radius: 50%; border: 2px solid #fff; background: #000;
-            cursor: crosshair; transition: 0.2s; flex-shrink: 0;
+            border-radius: 50% !important; border: 2px solid #fff; background: #000;
+            cursor: crosshair; transition: 0.2s; flex-shrink: 0; pointer-events: auto;
         }
         .pin:hover { transform: scale(1.3); background: #fff !important; }
 
-        .add-pin-btn {
-            width: 16px; height: 16px; background: #222; color: #888; border: 1px solid #333;
-            border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        }
-        .add-pin-btn:hover { color: #fff; border-color: #555; }
+        .tile-content { flex: 1; padding: 10px 15px; display: flex; flex-direction: column; }
+        .tile-textarea { width: 100%; flex: 1; background: #0a0a0a; border: 1px solid #222; color: #ccc; font-size: 11px; padding: 8px; resize: none; outline: none; border-radius: 4px; }
 
-        /* SVG & OTHERS */
+        .add-pin-btn { width: 14px; height: 14px; background: #222; color: #888; border: 1px solid #333; border-radius: 3px; font-size: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+
         #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .connection-line { fill: none; stroke-width: 3; stroke-linecap: round; pointer-events: stroke; cursor: pointer; }
         #selection-box { position: absolute; border: 1px solid #4a9eff; background: rgba(74, 158, 255, 0.1); pointer-events: none; display: none; z-index: 1000; }
         
         .toolbar { position: fixed; left: 20px; top: 20px; width: 220px; background: #111; border: 1px solid #333; padding: 15px; z-index: 2000; border-radius: 8px; }
-        .toolbar-btn { background: #222; border: 1px solid #333; color: #ddd; padding: 8px; font-size: 11px; cursor: pointer; width: 100%; margin-bottom: 5px; border-radius: 4px; text-align: left; }
+        .toolbar-btn { background: #222; border: 1px solid #333; color: #ddd; padding: 8px; font-size: 11px; cursor: pointer; width: 100%; margin-bottom: 5px; border-radius: 4px; }
         .color-palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 10px 0; }
         .swatch { height: 20px; border-radius: 3px; cursor: pointer; border: 1px solid #000; }
 
@@ -85,14 +63,13 @@
     </style>
 </head>
 <body>
-
     <div class="toolbar">
-        <b style="color: #4a9eff; font-size: 14px;">BERRY BLUEPRINT</b>
+        <b style="color: #4a9eff;">BERRY BLUEPRINT</b>
         <div id="palette" class="color-palette"></div>
         <button class="toolbar-btn" onclick="addTile()">+ New Node</button>
         <button class="toolbar-btn" onclick="undo()">↩ Undo</button>
-        <button class="toolbar-btn" onclick="saveProject()">💾 Save JSON</button>
-        <button class="toolbar-btn" onclick="triggerLoad()">📂 Load JSON</button>
+        <button class="toolbar-btn" onclick="saveProject()">💾 Export</button>
+        <button class="toolbar-btn" onclick="triggerLoad()">📂 Import</button>
         <button class="toolbar-btn" style="color:red" onclick="clearBoard()">Reset</button>
         <input type="file" id="loadInput" style="display:none" accept=".json">
     </div>
@@ -108,7 +85,6 @@
     <div id="context-menu">
         <div class="context-item" onclick="createNodeAtMouse()">+ Create & Connect</div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
