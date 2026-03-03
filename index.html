@@ -23,19 +23,19 @@
 
         #canvas { position: absolute; width: 10000px; height: 10000px; top: 0; left: 0; transform-origin: 0 0; }
 
-        /* Marquee Selection Box */
+        /* Ramka zaznaczania */
         #selection-box {
             position: absolute; border: 1px solid #4a9eff; background: rgba(74, 158, 255, 0.15);
             pointer-events: none; display: none; z-index: 1000;
         }
 
-        /* Tile Style */
+        /* Styl Tile'a */
         .tile {
-            position: absolute; min-width: 200px; background: rgba(25, 25, 25, 0.9);
+            position: absolute; min-width: 200px; background: rgba(25, 25, 25, 0.95);
             border: 1px solid #000; border-radius: 4px; z-index: 10;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: border 0.1s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
-        .tile.selected { border: 2px solid #fff34a; box-shadow: 0 0 10px rgba(255, 243, 74, 0.3); }
+        .tile.selected { border: 2px solid #fff34a; }
 
         .tile-header { 
             padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; 
@@ -46,71 +46,76 @@
             font-weight: 700; flex: 1; outline: none; font-family: 'JetBrains Mono';
         }
 
-        .header-btns { display: flex; gap: 5px; }
+        .header-btns { display: flex; gap: 5px; align-items: center; }
         .btn-icon {
             background: rgba(0,0,0,0.3); border: none; color: #ccc; cursor: pointer;
-            width: 20px; height: 20px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 12px;
+            width: 22px; height: 22px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 12px;
         }
         .btn-icon:hover { background: #444; color: #fff; }
         .btn-close:hover { background: #e74c3c; }
 
-        .tile-content { padding: 8px; display: none; } /* Domyślnie ukryte */
+        /* Pole tekstowe - domyślnie ukryte */
+        .tile-content { padding: 10px; border-top: 1px solid #222; display: none; }
         .tile-textarea { 
-            width: 100%; background: #111; border: 1px solid #333; color: #eee; 
-            font-size: 10px; padding: 6px; resize: none; outline: none; min-height: 40px; font-family: 'JetBrains Mono';
+            width: 100%; background: #080808; border: 1px solid #333; color: #aaa; 
+            font-size: 10px; padding: 8px; resize: none; outline: none; min-height: 50px; font-family: 'JetBrains Mono';
         }
 
-        /* Pins */
+        /* Piny */
         .pin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid; background: #0d0d0d; cursor: crosshair; position: absolute; }
         .pin-input { left: -7px; top: 38px; border-color: #fff; }
+        
         .pin-output-container { position: absolute; right: -7px; top: 38px; display: flex; flex-direction: column; gap: 12px; }
         .pin-output { width: 12px; height: 12px; border-radius: 50%; border: 2px solid; background: #0d0d0d; cursor: crosshair; }
         
         .add-output-btn {
-            position: absolute; right: -25px; bottom: 5px; width: 16px; height: 16px;
-            background: #444; color: #fff; border: none; border-radius: 50%;
+            position: absolute; right: -25px; bottom: 5px; width: 18px; height: 18px;
+            background: #333; color: #fff; border: none; border-radius: 50%;
             font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
+        .add-output-btn:hover { background: #555; }
 
         /* Toolbar */
         .toolbar {
             position: fixed; left: 20px; top: 20px; width: 220px;
             background: #151515; border: 1px solid #333; padding: 15px; z-index: 2000; border-radius: 4px;
         }
-        .toolbar-title { color: #888; font-size: 10px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        .toolbar-title { color: #666; font-size: 9px; font-weight: bold; margin: 10px 0 5px 0; text-transform: uppercase; }
         .toolbar-btn {
             background: #252525; border: 1px solid #333; color: #ddd;
-            padding: 8px; font-size: 11px; cursor: pointer; width: 100%; text-align: left; margin-bottom: 4px;
+            padding: 8px; font-size: 11px; cursor: pointer; width: 100%; text-align: left; margin-bottom: 4px; border-radius: 3px;
         }
         .toolbar-btn:hover { background: #333; }
         
-        .color-palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 10px 0; }
-        .swatch { height: 20px; border-radius: 2px; cursor: pointer; border: 1px solid #000; }
+        .color-palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 5px 0; }
+        .swatch { height: 22px; border-radius: 2px; cursor: pointer; border: 1px solid #000; }
 
-        /* SVG */
+        /* SVG Connections */
         #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .connection-line { fill: none; stroke-width: 2.5; stroke-linecap: round; pointer-events: stroke; cursor: pointer; }
+        .connection-line { fill: none; stroke-width: 3; stroke-linecap: round; pointer-events: stroke; cursor: pointer; }
 
+        /* Context Menu */
         #context-menu {
-            position: fixed; background: #222; border: 1px solid #444; color: white;
-            padding: 4px 0; display: none; z-index: 5000; font-size: 11px; border-radius: 3px; min-width: 160px;
+            position: fixed; background: #1a1a1a; border: 1px solid #444; color: white;
+            padding: 5px 0; display: none; z-index: 5000; font-size: 11px; border-radius: 3px; min-width: 150px;
         }
-        .context-item { padding: 6px 12px; cursor: pointer; }
+        .context-item { padding: 8px 12px; cursor: pointer; }
         .context-item:hover { background: #4a9eff; }
     </style>
 </head>
 <body>
 
     <div class="toolbar">
-        <div style="color: #fff; font-size: 16px; font-weight: 700; margin-bottom: 15px; letter-spacing: -0.5px;">Berry Blueprint</div>
+        <div style="color: #fff; font-size: 18px; font-weight: 700; margin-bottom: 10px;">Berry Blueprint</div>
         <button class="toolbar-btn" onclick="addTile()">+ Add Text Node</button>
         
-        <div class="toolbar-title">Data Type Colors</div>
+        <div class="toolbar-title">Data Types</div>
         <div id="palette" class="color-palette"></div>
         
-        <button class="toolbar-btn" onclick="saveProject()">💾 Save Project</button>
-        <button class="toolbar-btn" onclick="triggerLoad()">📂 Load Project</button>
-        <button class="toolbar-btn" style="color: #ff4a4a;" onclick="clearBoard()">⚠ Reset</button>
+        <div class="toolbar-title">Project</div>
+        <button class="toolbar-btn" onclick="saveProject()">💾 Save .JSON</button>
+        <button class="toolbar-btn" onclick="triggerLoad()">📂 Load .JSON</button>
+        <button class="toolbar-btn" style="color: #ff4a4a;" onclick="clearBoard()">⚠ Reset All</button>
         <input type="file" id="loadInput" style="display:none" accept=".json">
     </div>
 
@@ -123,7 +128,7 @@
     </div>
 
     <div id="context-menu">
-        <div class="context-item" onclick="createNodeAtMouse()">+ Create New Node</div>
+        <div class="context-item" onclick="createNodeAtMouse()">+ Create Node Here</div>
     </div>
 
     <script src="script.js"></script>
