@@ -1,119 +1,240 @@
-<!doctype html>
-<html lang="pl" class="h-full">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blueprint Task v2.5</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-        
-        * { font-family: 'JetBrains Mono', monospace; box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; overflow: hidden; background: #000000; height: 100%; }
-        
-        .grid-background {
-            background-color: #050505;
-            background-image: 
-                linear-gradient(#151515 1px, transparent 1px),
-                linear-gradient(90deg, #151515 1px, transparent 1px),
-                linear-gradient(#1a1a1a 1px, transparent 1px),
-                linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
-            background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
-        }
-        
-        .tile {
-            position: absolute; min-width: 220px;
-            background: rgba(15, 15, 15, 0.95); 
-            border: 1px solid #333; border-radius: 4px;
-            cursor: move; user-select: none; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10;
-        }
-        
-        .tile-header { 
-            padding: 8px 10px; display: flex; align-items: center; 
-            justify-content: space-between; border-radius: 3px 3px 0 0;
-        }
-        
-        .tile-title { 
-            background: transparent; border: none; color: #fff; 
-            font-size: 11px; font-weight: 700; flex: 1; outline: none;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
+let tiles = [];
+let connections = []; // { fromId, toId }
+let tileCounter = 0;
+let activeLine = null;
 
-        .btn-close {
-            background: transparent; border: none; color: rgba(255,255,255,0.5);
-            cursor: pointer; font-size: 16px; padding: 0 5px; line-height: 1;
-            transition: color 0.2s;
-        }
-        .btn-close:hover { color: #ff4d4d; }
+window.onload = () => {
+    const saved = localStorage.getItem('blueprint_task_data');
+    if (saved) {
+        const data = JSON.parse(saved);
+        tiles = data.tiles || [];
+        connections = data.connections || [];
+        tileCounter = data.tileCounter || 0;
+        tiles.forEach(t => renderTile(t));
+        drawConnections();
+    }
+};
 
-        .tile-content { padding: 12px; }
-        .tile-textarea { 
-            width: 100%; background: #0a0a0a; border: 1px solid #222; color: #aaa; 
-            font-size: 11px; padding: 8px; resize: none; outline: none; min-height: 70px;
-            border-radius: 2px;
-        }
+function addTile(x = 250, y = 100, title = "Zadanie Logic", content = "") {
+    tileCounter++;
+    const tile = {
+        id: tileCounter,
+        x: x,
+        y: y,
+        title: title,
+        content: content,
+        color: '#2c3e50'
+    };
+    tiles.push(tile);
+    renderTile(tile);
+    saveToLocalStorage();
+}
 
-        /* Piny w stylu Blueprint */
-        .pin {
-            width: 12px; height: 12px; border-radius: 50%; border: 2px solid;
-            background: #0d0d0d; cursor: crosshair; position: absolute; z-index: 20;
-            transition: transform 0.1s, background 0.1s;
-        }
-        .pin:hover { transform: scale(1.3); }
-        .pin-input { left: -7px; top: 42px; border-color: #f1c40f; } /* Żółty - Wejście */
-        .pin-output { right: -7px; top: 42px; border-color: #2ecc71; } /* Zielony - Wyjście */
+function renderTile(tile) {
+    const container = document.getElementById('tiles-layer');
+    const el = document.createElement('div');
+    el.className = 'tile';
+    el.id = `tile-${tile.id}`;
+    el.style.left = `${tile.x}px`;
+    el.style.top = `${tile.y}px`;
 
-        .toolbar {
-            position: fixed; left: 0; top: 0; width: 200px; height: 100%;
-            background: #0a0a0a; border-right: 1px solid #222; padding: 15px;
-            display: flex; flex-direction: column; gap: 8px; z-index: 1000;
-        }
-        .toolbar-btn {
-            background: #151515; border: 1px solid #2a2a2a; color: #aaa;
-            padding: 8px 12px; font-size: 11px; cursor: pointer; text-align: left; border-radius: 4px;
-        }
-        .toolbar-btn:hover { background: #222; color: #fff; }
-        
-        #canvas-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-        #canvas { position: absolute; width: 5000px; height: 5000px; transform-origin: 0 0; }
-        
-        /* Nitki połączeń */
-        .connection-line {
-            fill: none; stroke: #ffffff; stroke-width: 3;
-            stroke-linecap: round; pointer-events: stroke;
-            filter: drop-shadow(0 0 3px rgba(255,255,255,0.2));
-            cursor: pointer;
-        }
-        .connection-line:hover { stroke: #ff4d4d; stroke-width: 4; }
-        #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-    </style>
-</head>
-<body>
-
-    <div class="toolbar">
-        <div style="color: #4a9eff; font-size: 13px; font-weight: bold; letter-spacing: 1px;">BLUEPRINT TASK</div>
-        <div style="color: #444; font-size: 9px; margin-bottom: 10px;">ENGINE v2.5 | READY</div>
-        
-        <button class="toolbar-btn" onclick="addTile()">+ Dodaj Node</button>
-        <hr style="border: 0; border-top: 1px solid #222; margin: 5px 0;">
-        
-        <button class="toolbar-btn" onclick="saveToTxt()">📄 Eksport .TXT</button>
-        <button class="toolbar-btn" onclick="saveProject()">💾 Zapisz Projekt</button>
-        <button class="toolbar-btn" onclick="triggerLoad()">📂 Wczytaj Plik</button>
-        <button class="toolbar-btn" style="color: #e74c3c; margin-top: auto;" onclick="clearBoard()">⚠ Wyczyść scenerię</button>
-        
-        <input type="file" id="loadInput" style="display:none" accept=".json">
-    </div>
-
-    <div id="canvas-container" class="grid-background">
-        <div id="canvas">
-            <svg id="svg-layer">
-                <g id="connections-group"></g>
-            </svg>
-            <div id="tiles-layer"></div>
+    el.innerHTML = `
+        <div class="tile-header" style="background: ${tile.color}">
+            <input class="tile-title" value="${tile.title}" onchange="updateTile(${tile.id}, 'title', this.value)">
+            <button class="btn-close" onclick="removeTile(${tile.id})">×</button>
         </div>
-    </div>
+        <div class="tile-content">
+            <textarea class="tile-textarea" onchange="updateTile(${tile.id}, 'content', this.value)" placeholder="Wpisz treść...">${tile.content}</textarea>
+        </div>
+        <div class="pin pin-input" title="Input" onmouseup="dropConnection(event, ${tile.id})"></div>
+        <div class="pin pin-output" title="Output" onmousedown="startConnection(event, ${tile.id})"></div>
+    `;
 
-    <script src="script.js"></script>
-</body>
-</html>
+    // Obsługa Drag & Drop kafelka
+    el.onmousedown = function(e) {
+        if (e.target.classList.contains('pin') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return;
+        
+        let shiftX = e.clientX - el.getBoundingClientRect().left;
+        let shiftY = e.clientY - el.getBoundingClientRect().top;
+
+        function moveAt(pageX, pageY) {
+            tile.x = pageX - shiftX;
+            tile.y = pageY - shiftY;
+            el.style.left = tile.x + 'px';
+            el.style.top = tile.y + 'px';
+            drawConnections(); // Dynamiczne odświeżanie nitek
+        }
+
+        function onMouseMove(e) { moveAt(e.pageX, e.pageY); }
+        document.addEventListener('mousemove', onMouseMove);
+
+        document.onmouseup = function() {
+            document.removeEventListener('mousemove', onMouseMove);
+            saveToLocalStorage();
+            document.onmouseup = null;
+        };
+    };
+
+    container.appendChild(el);
+}
+
+// --- SYSTEM NITEK (CONNECTIONS) ---
+
+function startConnection(e, fromId) {
+    e.stopPropagation();
+    const pinRect = e.target.getBoundingClientRect();
+    const startX = pinRect.left + pinRect.width / 2 + window.scrollX;
+    const startY = pinRect.top + pinRect.height / 2 + window.scrollY;
+
+    activeLine = { fromId, startX, startY };
+
+    const onMouseMove = (moveEv) => {
+        if (!activeLine) return;
+        drawTempLine(startX, startY, moveEv.pageX, moveEv.pageY);
+    };
+
+    const onMouseUp = () => {
+        const temp = document.getElementById('temp-line');
+        if (temp) temp.remove();
+        activeLine = null;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+}
+
+function dropConnection(e, toId) {
+    if (activeLine && activeLine.fromId !== toId) {
+        // Dodaj połączenie jeśli nie istnieje
+        const exists = connections.some(c => c.fromId === activeLine.fromId && c.toId === toId);
+        if (!exists) {
+            connections.push({ fromId: activeLine.fromId, toId: toId });
+            drawConnections();
+            saveToLocalStorage();
+        }
+    }
+}
+
+function drawTempLine(x1, y1, x2, y2) {
+    const svg = document.getElementById('svg-layer');
+    let line = document.getElementById('temp-line');
+    if (!line) {
+        line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        line.id = 'temp-line';
+        line.setAttribute("class", "connection-line");
+        line.style.stroke = "rgba(255,255,255,0.4)";
+        line.style.strokeDasharray = "4,4";
+        svg.appendChild(line);
+    }
+    line.setAttribute("d", getBezierPath(x1, y1, x2, y2));
+}
+
+function drawConnections() {
+    const group = document.getElementById('connections-group');
+    group.innerHTML = "";
+
+    connections.forEach((conn, index) => {
+        const outPin = document.querySelector(`#tile-${conn.fromId} .pin-output`);
+        const inPin = document.querySelector(`#tile-${conn.toId} .pin-input`);
+
+        if (outPin && inPin) {
+            const r1 = outPin.getBoundingClientRect();
+            const r2 = inPin.getBoundingClientRect();
+            
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("class", "connection-line");
+            path.setAttribute("d", getBezierPath(
+                r1.left + r1.width/2, r1.top + r1.height/2,
+                r2.left + r2.width/2, r2.top + r2.height/2
+            ));
+            
+            // Kliknięcie w nitkę usuwa ją
+            path.onclick = () => {
+                connections.splice(index, 1);
+                drawConnections();
+                saveToLocalStorage();
+            };
+            
+            group.appendChild(path);
+        }
+    });
+}
+
+function getBezierPath(x1, y1, x2, y2) {
+    const dx = Math.abs(x2 - x1) * 0.5;
+    return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+}
+
+// --- FUNKCJE POMOCNICZE ---
+
+function updateTile(id, field, value) {
+    const tile = tiles.find(t => t.id === id);
+    if (tile) tile[field] = value;
+    saveToLocalStorage();
+}
+
+function removeTile(id) {
+    tiles = tiles.filter(t => t.id !== id);
+    connections = connections.filter(c => c.fromId !== id && c.toId !== id);
+    const el = document.getElementById(`tile-${id}`);
+    if (el) el.remove();
+    drawConnections();
+    saveToLocalStorage();
+}
+
+function clearBoard() {
+    if(confirm("Czy usunąć wszystkie nody i połączenia?")) {
+        tiles = [];
+        connections = [];
+        document.getElementById('tiles-layer').innerHTML = "";
+        document.getElementById('connections-group').innerHTML = "";
+        localStorage.removeItem('blueprint_task_data');
+        tileCounter = 0;
+    }
+}
+
+function saveToLocalStorage() {
+    localStorage.setItem('blueprint_task_data', JSON.stringify({ tiles, connections, tileCounter }));
+}
+
+
+function saveProject() {
+    const data = JSON.stringify({ tiles, connections, tileCounter });
+    const blob = new Blob([data], { type: 'application/json' });
+    downloadBlob(blob, 'project-blueprint.json');
+}
+
+function saveToTxt() {
+    let content = "BLUEPRINT EXPORT\n\n";
+    tiles.forEach((t, i) => {
+        content += `[${i+1}] ${t.title.toUpperCase()}\nContent: ${t.content}\n\n`;
+    });
+    downloadBlob(new Blob([content], {type: 'text/plain'}), 'export-tasks.txt');
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function triggerLoad() { document.getElementById('loadInput').click(); }
+
+document.getElementById('loadInput').onchange = (e) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const data = JSON.parse(ev.target.result);
+        tiles = data.tiles || [];
+        connections = data.connections || [];
+        tileCounter = data.tileCounter || 0;
+        document.getElementById('tiles-layer').innerHTML = "";
+        tiles.forEach(t => renderTile(t));
+        drawConnections();
+        saveToLocalStorage();
+    };
+    reader.readAsText(e.target.files[0]);
+};
