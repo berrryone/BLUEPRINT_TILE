@@ -13,7 +13,7 @@
         #canvas { position: absolute; width: 10000px; height: 10000px; top: 0; left: 0; transform-origin: 0 0; }
 
         .tile {
-            position: absolute; min-width: 220px; background: #141414; border: 1px solid #333; border-radius: 8px; z-index: 10;
+            position: absolute; min-width: 330px; background: #141414; border: 1px solid #333; border-radius: 8px; z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; resize: both; display: flex; flex-direction: column;
         }
         .tile.selected { border: 2px solid #fff34a; box-shadow: 0 0 15px rgba(255, 243, 74, 0.3); }
@@ -29,7 +29,7 @@
         .tile-title { background: transparent; border: none; color: inherit; font-size: 11px; font-weight: 700; flex: 1; outline: none; }
         .btn-icon { background: rgba(0,0,0,0.1); border: none; color: inherit; cursor: pointer; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
 
-        .tile-body { display: flex; position: relative; flex: 1; min-height: 50px; }
+        .tile-body { display: flex; position: relative; flex: 1; min-height: 40px; }
         
         /* PINY - ABSOLUTNE I STALE */
         .pins-col { position: absolute; top: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 10px; z-index: 100; pointer-events: none; }
@@ -64,7 +64,7 @@
 </head>
 <body>
     <div class="toolbar">
-        <b style="color: #4a9eff;">Berry Blueprint Sound Organization</b>
+        <b style="color: #FFFFFF;">Berry Blueprint Sound Organization</b>
         <div id="palette" class="color-palette"></div>
         <button class="toolbar-btn" onclick="addTile()">+ New Node</button>
         <button class="toolbar-btn" onclick="undo()">↩ Undo</button>
