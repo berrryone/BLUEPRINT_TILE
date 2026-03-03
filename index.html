@@ -3,87 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blueprint Engine v3.0</title>
+    <title>UE Logic Board v3.0</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        
         * { font-family: 'JetBrains Mono', monospace; box-sizing: border-box; }
         html, body { margin: 0; padding: 0; overflow: hidden; background: #000; height: 100%; }
 
+        /* Tło siatki */
         .grid-background {
-            background-color: #050505;
+            background-color: #0b0b0b;
             background-image: 
-                linear-gradient(#151515 1px, transparent 1px),
-                linear-gradient(90deg, #151515 1px, transparent 1px),
                 linear-gradient(#1a1a1a 1px, transparent 1px),
-                linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+                linear-gradient(90deg, #1a1a1a 1px, transparent 1px),
+                linear-gradient(#222 1px, transparent 1px),
+                linear-gradient(90deg, #222 1px, transparent 1px);
             background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
         }
 
-        .tile {
-            position: absolute; min-width: 200px; background: rgba(13, 13, 13, 0.95);
-            border: 1px solid #333; border-radius: 4px; cursor: move; user-select: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6); z-index: 10;
+        /* Toolbar */
+        .toolbar {
+            position: fixed; left: 0; top: 0; width: 220px; height: 100%;
+            background: #111; border-right: 1px solid #333; padding: 20px;
+            display: flex; flex-direction: column; gap: 10px; z-index: 1000;
         }
+        .toolbar-title { color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; }
+        .toolbar-btn {
+            background: #1a1a1a; border: 1px solid #333; color: #ccc;
+            padding: 10px; font-size: 11px; cursor: pointer; text-align: left; border-radius: 4px;
+        }
+        .toolbar-btn:hover { background: #252525; color: #fff; }
 
-        .tile-header { padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; border-radius: 4px 4px 0 0; }
+        /* Paleta kolorów */
+        .color-palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 5px; }
+        .color-swatch { width: 100%; aspect-ratio: 1; border-radius: 3px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .color-swatch:hover { transform: scale(1.1); }
+
+        /* Tile */
+        .tile {
+            position: absolute; min-width: 220px; background: rgba(15, 15, 15, 0.95);
+            border: 1px solid #333; border-radius: 5px; cursor: move; user-select: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10;
+        }
+        .tile.selected { border: 2px solid #4a9eff; box-shadow: 0 0 15px rgba(74, 158, 255, 0.3); }
+
+        .tile-header { 
+            padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; 
+            border-radius: 4px 4px 0 0; position: relative;
+        }
         .tile-title { background: transparent; border: none; color: #fff; font-size: 11px; font-weight: 700; flex: 1; outline: none; }
         
-        .btn-header { background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 14px; padding: 0 4px; }
-        .btn-header:hover { color: #ff4d4d; }
+        .btn-close {
+            background: rgba(0,0,0,0.2); border: none; color: #888; cursor: pointer;
+            width: 20px; height: 20px; border-radius: 3px; font-size: 14px; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-close:hover { background: #e74c3c; color: white; }
 
-        .tile-content { padding: 10px; }
+        .tile-content { padding: 12px; }
         .tile-textarea { 
-            width: 100%; background: #0a0a0a; border: 1px solid #222; color: #aaa; 
-            font-size: 11px; padding: 8px; resize: none; outline: none; min-height: 60px;
+            width: 100%; background: #080808; border: 1px solid #222; color: #aaa; 
+            font-size: 11px; padding: 8px; resize: vertical; outline: none; min-height: 50px;
         }
 
+        /* Piny i przycisk PLUS */
         .pin {
             width: 12px; height: 12px; border-radius: 50%; border: 2px solid;
             background: #0d0d0d; cursor: crosshair; position: absolute; z-index: 20;
         }
-        .pin-input { left: -7px; top: 42px; border-color: #f1c40f; }
-        .pin-output-container { position: absolute; right: -7px; top: 42px; display: flex; flex-direction: column; gap: 12px; }
+        .pin-input { left: -7px; top: 45px; border-color: #f1c40f; }
+        
+        .outputs-wrapper { position: absolute; right: -7px; top: 45px; display: flex; flex-direction: column; gap: 15px; }
         .pin-output { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #2ecc71; background: #0d0d0d; cursor: crosshair; }
-
-        .toolbar {
-            position: fixed; left: 0; top: 0; width: 180px; height: 100%;
-            background: #0a0a0a; border-right: 1px solid #222; padding: 15px;
-            display: flex; flex-direction: column; gap: 8px; z-index: 1000;
+        
+        .add-pin-btn {
+            position: absolute; right: -25px; bottom: 5px; width: 18px; height: 18px;
+            background: #2ecc71; color: black; border: none; border-radius: 50%;
+            font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            opacity: 0.6; transition: opacity 0.2s;
         }
-        .toolbar-title { color: #666; font-size: 9px; text-transform: uppercase; margin-top: 10px; }
-        .toolbar-btn {
-            background: #151515; border: 1px solid #2a2a2a; color: #aaa;
-            padding: 8px 10px; font-size: 11px; cursor: pointer; text-align: left; border-radius: 2px;
-        }
-        .toolbar-btn:hover { background: #222; color: #fff; }
+        .add-pin-btn:hover { opacity: 1; }
 
+        /* SVG Połączenia */
         #canvas-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
         #canvas { position: absolute; width: 5000px; height: 5000px; transform-origin: 0 0; }
-        
-        .connection-line { fill: none; stroke: #fff; stroke-width: 3; cursor: pointer; }
-        .connection-line:hover { stroke: #ff4d4d; }
         #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .connection-line { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; cursor: pointer; pointer-events: stroke; }
+        .connection-line:hover { stroke: #ff4d4d; stroke-width: 4; }
 
-        .info-panel { position: fixed; bottom: 15px; left: 195px; color: #444; font-size: 10px; }
+        .info-panel { position: fixed; bottom: 15px; left: 235px; color: #444; font-size: 10px; }
     </style>
 </head>
 <body class="grid-background">
 
     <div class="toolbar">
-        <div style="color: #4a9eff; font-size: 14px; font-weight: bold;">LOGIC BOARD</div>
+        <div style="color: #4a9eff; font-size: 14px; font-weight: bold;">ENGINE BLUEPRINT</div>
+        <div style="color: #444; font-size: 9px;">DEVELOPER BUILD 3.0</div>
+
+        <button class="toolbar-btn" onclick="addTile()">+ Dodaj Node</button>
         
-        <div class="toolbar-title">Nody</div>
-        <button class="toolbar-btn" onclick="addTile()">+ Nowy Tile</button>
+        <div class="toolbar-title">Zmień kolor zaznaczonego</div>
+        <div class="color-palette" id="colorPalette">
+            </div>
+
+        <div class="toolbar-title">Projekt</div>
+        <button class="toolbar-btn" onclick="saveProject()">💾 Pobierz Projekt</button>
+        <button class="toolbar-btn" onclick="triggerLoad()">📂 Wczytaj Projekt</button>
         
-        <div class="toolbar-title">Ustawienia</div>
-        <button class="toolbar-btn" id="snapBtn" onclick="toggleSnap()">Snap to Grid: ON</button>
-        <button class="toolbar-btn" onclick="resetZoom()">Reset Zoom</button>
-        
-        <div class="toolbar-title">Dane</div>
-        <button class="toolbar-btn" onclick="saveProject()">Zapisz JSON</button>
-        <button class="toolbar-btn" onclick="triggerLoad()">Wczytaj JSON</button>
-        
-        <button class="toolbar-btn" style="color:#e74c3c; margin-top: auto;" onclick="clearBoard()">Resetuj wszystko</button>
+        <button class="toolbar-btn" style="color: #e74c3c; margin-top: auto;" onclick="clearBoard()">⚠ Reset Sceny</button>
         <input type="file" id="loadInput" style="display:none" accept=".json">
     </div>
 
