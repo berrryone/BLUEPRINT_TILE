@@ -90,7 +90,7 @@ function renderTile(tile) {
         </div>
     `;
 
-    // Observer do zapamiętywania rozmiaru (Resize)
+    // resize
     const ro = new ResizeObserver(entries => {
         for (let entry of entries) {
             tile.w = entry.contentRect.width;
@@ -134,7 +134,7 @@ function dropLine(e, id, idx) {
     }
 }
 
-// Obsługa puszczania nitek z lewej strony (inputów)
+// puszczanie (się) niteczek
 document.addEventListener('mousedown', (e) => {
     if(e.target.classList.contains('pin-input')) {
         const id = parseInt(e.target.parentElement.parentElement.parentElement.id.split('-')[1]);
@@ -185,7 +185,7 @@ function createNodeAtMouse() {
     document.getElementById('context-menu').style.display = 'none'; saveState();
 }
 
-// Reszta funkcji (Undo, Save, Palette itd.)
+// reztaaaa
 function changeSelectedColor(cls, hex) { selectedIds.forEach(id => { const t = tiles.find(x => x.id === id); if (t) { t.colorClass = cls; t.color = hex; } }); saveState(); refreshCanvas(); }
 function deleteSelected() { tiles = tiles.filter(t => !selectedIds.has(t.id)); connections = connections.filter(c => !selectedIds.has(c.fromId) && !selectedIds.has(c.toId)); selectedIds.clear(); saveState(); refreshCanvas(); }
 function addPin(id, type) { const t = tiles.find(x => x.id === id); if (t) { t[type]++; saveState(); refreshCanvas(); } }
